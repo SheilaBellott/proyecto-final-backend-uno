@@ -1,0 +1,74 @@
+<!-- products/index.handlebars -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Productos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Productos</h1>
+        <nav>
+            <a href="/">Volver a la página principal</a>
+            <a href="/carts">Ver Carrito</a>
+        </nav>
+    </header>
+    <main>
+        <div id="message" style="color: green;"></div>
+        <ul>
+            {{#each products}}
+                <li>
+                    <a href="/products/{{this._id}}">{{this.name}}</a> - Precio: ${{this.price}}
+                    <form class="add-to-cart-form" data-product-id="{{this._id}}">
+                        <label for="quantity_{{this._id}}">Cantidad:</label>
+                        <input type="number" id="quantity_{{this._id}}" name="quantity" value="1" min="1">
+                        <button type="submit">Agregar al carrito</button>
+                    </form>
+                </li>
+            {{/each}}
+        </ul>
+        {{#if hasPrevPage}}
+            <a href="/products?page={{prevPage}}">Página anterior</a>
+        {{/if}}
+        {{#if hasNextPage}}
+            <a href="/products?page={{nextPage}}">Página siguiente</a>
+        {{/if}}
+    </main>
+
+    <script>
+        const forms = document.querySelectorAll('.add-to-cart-form');
+
+        forms.forEach(form => {
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault(); // Prevenir la redirección de la página
+                const productId = this.getAttribute('data-product-id');
+                const quantityInput = this.querySelector('input[name="quantity"]');
+                const quantity = quantityInput.value || 1; // Obtener cantidad
+
+                try {
+                    const response = await fetch(`/api/carts/products/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ quantity }) // Enviar cantidad
+                    });
+
+                    const result = await response.json();
+                    if (response.ok) {
+                        document.getElementById('message').innerText = 'Producto agregado al carrito exitosamente';
+                    } else {
+                        document.getElementById('message').innerText = `Error: ${result.message}`;
+                    }
+                } catch (error) {
+                    document.getElementById('message').innerText = 'Error al agregar el producto al carrito';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+

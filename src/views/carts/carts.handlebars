@@ -1,0 +1,62 @@
+<!-- src/views/carts.handlebars -->
+<h1>Carrito</h1>
+<div id="message" style="color: green;"></div>
+{{#if products.length}}
+    <ul id="cart-products">
+        {{#each products}}
+        <li data-product-price="{{this.product.price}}" data-product-quantity="{{this.quantity}}">
+            {{this.product.name}} - ${{this.product.price}} (Cantidad: {{this.quantity}})
+            <form class="remove-from-cart-form" data-product-id="{{this.product._id}}" method="POST" style="display:inline;">
+                <button type="submit">Eliminar</button>
+            </form>
+        </li>
+        {{/each}}
+    </ul>
+    <h2>Total: $<span id="total-price">{{totalPrice}}</span></h2>
+{{else}}
+    <p>No hay productos en el carrito.</p>
+{{/if}}
+
+<script>
+    const removeForms = document.querySelectorAll('.remove-from-cart-form');
+
+    removeForms.forEach(form => {
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevenir la redirección de la página
+            const productId = this.getAttribute('data-product-id');
+            const listItem = this.closest('li'); // Elemento <li> que contiene el producto
+            const productPrice = parseFloat(listItem.getAttribute('data-product-price')); // Obtener el precio del producto
+            const productQuantity = parseInt(listItem.getAttribute('data-product-quantity')); // Obtener la cantidad del producto
+            const totalPriceElement = document.getElementById('total-price');
+
+            try {
+                const response = await fetch(`/api/carts/products/${productId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    // Mostrar mensaje de éxito
+                    document.getElementById('message').innerText = 'Producto eliminado del carrito';
+                    
+                    // Actualizar el total
+                    const currentTotal = parseFloat(totalPriceElement.innerText);
+                    const newTotal = currentTotal - (productPrice * productQuantity);
+                    totalPriceElement.innerText = newTotal.toFixed(2); // Actualizar el total en el DOM
+
+                    // Remover el producto de la lista del DOM
+                    listItem.remove();
+                } else {
+                    // Mostrar mensaje de error
+                    document.getElementById('message').innerText = `Error: ${result.message}`;
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = 'Error al eliminar el producto del carrito';
+            }
+        });
+    });
+</script>
+
